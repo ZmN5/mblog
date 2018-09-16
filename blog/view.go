@@ -11,7 +11,7 @@ import (
 
 func Auth(f http.HandlerFunc) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		if AUTH != request.Header.Get("Authenticate") {
+		if AUTH != request.Header.Get("Authorization") {
 			writer.WriteHeader(http.StatusForbidden)
 			fmt.Fprintf(writer, "Forbidden")
 			return

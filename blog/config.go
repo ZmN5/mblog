@@ -1,6 +1,8 @@
 package blog
 
+import "os"
+
 const MARKDOWN_PATH = "/data/blog/markdown"
 const HTML_PATH = "/data/blog/html"
 
-const AUTH = ""
+var AUTH = os.Getenv("AUTH")
