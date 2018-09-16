@@ -8,7 +8,7 @@ import (
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", blog.Index)
-	mux.HandleFunc("/upload/", blog.Upload)
+	mux.HandleFunc("/upload/", blog.Auth(blog.Upload))
 	mux.HandleFunc("/post/", blog.ReadPost)
 
 	server := &http.Server{

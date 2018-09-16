@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 	"strings"
 )
 
@@ -64,7 +65,9 @@ func (md MarkdownStorage) ReadHtml() string {
 	html, ok := Cache[md.Id]
 	if !ok {
 		html = string(blackfriday.Run(body))
-		Cache[md.Id] = html
+		if md.Id > 0 {
+			Cache[md.Id] = html
+		}
 	}
 	return html
 
@@ -110,6 +113,7 @@ func (mds MarkdownStorageMap) Append(md MarkdownStorage) error {
 		}
 	}
 	maxId++
+	md.Id = maxId
 	md.SaveMarkDown()
 	mds[maxId] = md
 	return nil
@@ -140,6 +144,7 @@ func (mds MarkdownStorageMap) SortList() []MarkdownStorage {
 	for id := range mds {
 		allId = append(allId, id)
 	}
+	sort.Ints(allId)
 	var sortedMds []MarkdownStorage
 	for _, id := range allId {
 		sortedMds = append(sortedMds, mds[id])

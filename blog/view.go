@@ -1,7 +1,9 @@
 package blog
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,8 +25,25 @@ func Index(writer http.ResponseWriter, request *http.Request) {
 }
 
 func Upload(writer http.ResponseWriter, request *http.Request) {
-	url := request.URL.Path
-	fmt.Fprintf(writer, "%s, upload", url)
+	var buf bytes.Buffer
+	if request.Method != "POST" {
+		writer.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(writer, "Not Found")
+	}
+	file, header, err := request.FormFile("file")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	filename := strings.Split(header.Filename, ".")[0]
+	io.Copy(&buf, file)
+	md := MarkdownStorage{
+		Id:       0,
+		Title:    filename,
+		Markdown: buf.Bytes(),
+	}
+	StorageMap.Append(md)
+	fmt.Fprintf(writer, "Success")
 }
 
 func ReadPost(writer http.ResponseWriter, request *http.Request) {
