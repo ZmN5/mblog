@@ -63,7 +63,7 @@ func (md MarkdownStorage) ReadHtml() string {
 	}
 	html, ok := Cache[md.Id]
 	if !ok {
-		html = string(blackfriday.MarkdownCommon(body))
+		html = string(blackfriday.Run(body))
 		Cache[md.Id] = html
 	}
 	return html
