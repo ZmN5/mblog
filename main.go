@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/fcy/mblog/blog"
+	"github.com/fucangyu/mblog/blog"
 	"net/http"
 )
 
