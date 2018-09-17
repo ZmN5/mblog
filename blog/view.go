@@ -54,7 +54,7 @@ func ReadPost(writer http.ResponseWriter, request *http.Request) {
 		if err == nil {
 			html, ok := StorageMap[id]
 			if ok {
-				fmt.Fprintf(writer, "<html>%s</html>", html.ReadHtml())
+				fmt.Fprintf(writer, "%s", html.ReadHtml())
 				return
 			}
 		}

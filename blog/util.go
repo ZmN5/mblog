@@ -1,6 +1,7 @@
 package blog
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -53,4 +54,16 @@ func ParseMarkdownName(filename string) (int, string, error) {
 		return -1, "", err
 	}
 	return Id, strings.TrimSuffix(ss[1], ".md"), nil
+}
+
+func parseHtml(title string, body string) string {
+	metaHtml := "<meta charset=\"UTF-8\">"
+	titleHtml := fmt.Sprintf("<title>%s</title>", title)
+	styleHtml := fmt.Sprintf("<style>#wrapper{width: 960px;margin: 0 auto;border:0px solid;}</style>")
+
+	headHtml := fmt.Sprintf("<head>%s%s%s</head>", metaHtml, titleHtml, styleHtml)
+	bodyHtml := fmt.Sprintf("<body><div id=\"wrapper\" align=\"left\">%s</div></body>", body)
+
+	return fmt.Sprintf("<html>%s%s</html>", headHtml, bodyHtml)
+
 }

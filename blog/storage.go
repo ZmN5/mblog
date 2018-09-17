@@ -69,7 +69,7 @@ func (md MarkdownStorage) ReadHtml() string {
 			Cache[md.Id] = html
 		}
 	}
-	return html
+	return parseHtml(md.Title, html)
 
 }
 
