@@ -2,7 +2,10 @@ package blog
 
 import "os"
 
-const MARKDOWN_PATH = "/data/blog/markdown"
-const HTML_PATH = "/data/blog/html"
+const WORKDIR = "/data/blog/"
+const MARKDOWN_PATH = WORKDIR + "markdown"
+const HTML_PATH = WORKDIR + "html"
+const CERTS = WORKDIR + "certs"
 
 var AUTH = os.Getenv("AUTH")
+var DOMAIN = os.Getenv("DOMAIN")
