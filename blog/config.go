@@ -9,3 +9,4 @@ const CERTS = WORKDIR + "certs"
 
 var AUTH = os.Getenv("AUTH")
 var DOMAIN = os.Getenv("DOMAIN")
+var MODE = os.Getenv("MODE")

@@ -8,10 +8,10 @@ OUTPUT_PATH := $(WORKDIR)/mblog
 IMAGE_VERSION := fucangyu/mblog
 
 build-linux:
-	docker run --rm -v $(PWD):$(WORKDIR) -v $(GOPATH):/go  -e GOOS=linux -e GOARCH=$(GOARCH) -w $(WORKDIR) $(GOLANG_DOCKER_IMAGE) ./build.sh
+		docker run --rm -v $(PWD):$(WORKDIR) -v $(GOPATH):/go  -e GOOS=linux -e GOARCH=$(GOARCH) -w $(WORKDIR) $(GOLANG_DOCKER_IMAGE) ./build.sh
 
 build-darwin:
-	    docker run --rm -v $(PWD):$(WORKDIR) -e GOOS=darwin -e GOARCH=$(GOARCH) -w $(WORKDIR) $(GOLANG_DOCKER_IMAGE) $(WORKDIR)/build.sh
+	    docker run --rm -v $(PWD):$(WORKDIR) -v $(GOPATH):/go -e GOOS=darwin -e GOARCH=$(GOARCH) -w $(WORKDIR) $(GOLANG_DOCKER_IMAGE) $(WORKDIR)/build.sh
 
 release:
 	    docker build -t $(IMAGE_VERSION) .
