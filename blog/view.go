@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -35,14 +36,30 @@ func Upload(writer http.ResponseWriter, request *http.Request) {
 		panic(err)
 	}
 	defer file.Close()
-	filename := strings.Split(header.Filename, ".")[0]
+	rawFilename := SafeFilename(header.Filename)
+	filenameArr := strings.Split(rawFilename, ".")
+	filename := filenameArr[0]
+	var ext string
+	if filenameArr[1] == "md" {
+		ext = filenameArr[1]
+	} else {
+		ext = "wi" // with images
+	}
 	io.Copy(&buf, file)
 	md := MarkdownStorage{
-		Id:       0,
-		Title:    filename,
-		Markdown: buf.Bytes(),
+		Id:    0,
+		Title: filename,
+		Ext:   ext,
 	}
-	StorageMap.Append(md)
+	nextId := StorageMap.Append(md)
+	md.Id = nextId
+	if ext == "md" {
+		SaveUploadFile(buf.Bytes(), md.FilePath())
+	} else {
+		rawFilePath := path.Join(COMPRESS_FILE_PATH, rawFilename)
+		SaveUploadFile(buf.Bytes(), rawFilePath)
+		UnCompressFile(rawFilePath, md.FilePath())
+	}
 	fmt.Fprintf(writer, "Success")
 }
 

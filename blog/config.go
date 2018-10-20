@@ -1,12 +1,22 @@
 package blog
 
-import "os"
+import (
+	"os"
+)
 
-const WORKDIR = "/data/blog/"
+// const WORKDIR = "/data/blog/"
+const WORKDIR = "/Users/cangyufu/Documents/articles/"
 const MARKDOWN_PATH = WORKDIR + "markdown"
-const HTML_PATH = WORKDIR + "html"
+const COMPRESS_FILE_PATH = WORKDIR + "compress"
 const CERTS = WORKDIR + "certs"
 
 var AUTH = os.Getenv("AUTH")
-var DOMAIN = os.Getenv("DOMAIN")
 var MODE = os.Getenv("MODE")
+var DOMAIN = os.Getenv("DOMAIN")
+
+func init() {
+
+	if MODE == "" {
+		MODE = "HTTP"
+	}
+}

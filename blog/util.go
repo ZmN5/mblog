@@ -1,7 +1,9 @@
 package blog
 
 import (
+	"archive/zip"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"strconv"
@@ -33,6 +35,11 @@ func Mkdir(filepath string) error {
 	return err
 }
 
+func SafeFilename(filename string) string {
+	trimName := strings.Trim(filename, ".")
+	return strings.Replace(trimName, "/", "_", -1)
+}
+
 func TouchFile(filename string) (*os.File, error) {
 	dir := path.Dir(filename)
 	dirErr := Mkdir(dir)
@@ -47,13 +54,66 @@ func TouchFile(filename string) (*os.File, error) {
 	return nil, dirErr
 }
 
-func ParseMarkdownName(filename string) (int, string, error) {
+func SaveUploadFile(data []byte, filePath string) error {
+	fd, err := TouchFile(filePath)
+	defer fd.Close()
+	if err == nil {
+		_, err := fd.Write(data)
+		if err == nil {
+			return nil
+		} else {
+			return err
+		}
+	}
+	return err
+}
+
+func UnCompressFile(zipFilePath, unzipFilePath string) error {
+	r, err := zip.OpenReader(zipFilePath)
+	if err != nil {
+		return err
+	}
+	for _, k := range r.Reader.File {
+		parsedName := path.Join(strings.Split(k.Name, "/")[1:]...)
+		filename := path.Join(unzipFilePath, parsedName)
+		if k.FileInfo().IsDir() {
+			Mkdir(filename)
+			continue
+		}
+		r, err := k.Open()
+		if err != nil {
+			continue
+		}
+		defer r.Close()
+		NewFile, err := TouchFile(filename)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		io.Copy(NewFile, r)
+		NewFile.Close()
+	}
+	return nil
+
+}
+
+func ParseMarkdownName(filename string) (int, string, string, error) {
 	ss := strings.Split(filename, "--")
 	Id, err := strconv.Atoi(ss[0])
 	if err != nil {
-		return -1, "", err
+		return -1, "", "", err
 	}
-	return Id, strings.TrimSuffix(ss[1], ".md"), nil
+	var ext string
+	var title string
+	if strings.HasSuffix(filename, ".md") {
+		ext = "md"
+		title = strings.TrimSuffix(ss[1], ".md")
+	} else if strings.HasSuffix(filename, ".wi") {
+		ext = "wi"
+		title = strings.TrimSuffix(ss[1], ".wi")
+	}
+
+	return Id, title, ext, nil
 }
 
 func parseHtml(title string, body string) string {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/russross/blackfriday"
 	"io/ioutil"
-	"os"
+	// "os"
 	"path"
 	"sort"
 	"strings"
@@ -19,58 +19,66 @@ func init() {
 }
 
 type MarkdownStorage struct {
-	Id       int
-	Title    string
-	Markdown []byte
+	Id    int
+	Title string
+	Ext   string
 }
 
-func (md MarkdownStorage) getFilePath() string {
-	return path.Join(MARKDOWN_PATH, fmt.Sprintf("%d--%s.md", md.Id, md.Title))
-
+func (md MarkdownStorage) String() string {
+	return fmt.Sprintf("%d--%s.%s", md.Id, md.Title, md.Ext)
 }
 
-func (md MarkdownStorage) SaveMarkDown() error {
-	data := []byte(md.Markdown)
-	fd, err := TouchFile(md.getFilePath())
-	defer fd.Close()
-	if err == nil {
-		_, err := fd.Write(data)
-		if err == nil {
-			return nil
-		} else {
-			return err
-		}
-	}
-	return err
+func (md MarkdownStorage) FilePath() string {
+	return path.Join(MARKDOWN_PATH, md.String())
 }
 
-func (md MarkdownStorage) Delete() {
-	oldpath := md.getFilePath()
-	deletedpath := strings.Replace(oldpath, ".md", ".old", 1)
-	os.Rename(oldpath, deletedpath)
-}
+//func (md MarkdownStorage) Delete() {
+//	deletedpath := strings.Join(md.RawFilePath, "_del")
+//	os.Rename(md.RawFilePath, deletedpath)
+//}
 
 func (md MarkdownStorage) ReadHtml() string {
-	var body []byte
-	var err error
-	if md.Markdown == nil {
-		body, err = ioutil.ReadFile(md.getFilePath())
+	if md.Ext == "md" {
+		return md.ReadHtmlFromFile()
+	} else {
+		return md.ReadHtmlFromDir()
+	}
+}
+
+func (md MarkdownStorage) ReadHtmlFromDir() string {
+	files, err := ioutil.ReadDir(md.FilePath())
+
+	if err != nil {
+		return ""
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		filename := file.Name()
+		if !strings.HasSuffix(filename, "md") {
+			continue
+		}
+
+		body, err := ioutil.ReadFile(path.Join(md.FilePath(), filename))
 		if err != nil {
 			return ""
 		}
-		md.Markdown = body
-	} else {
-		body = md.Markdown
+		html := string(blackfriday.Run(body))
+		return parseHtml(md.Title, html)
 	}
-	html, ok := Cache[md.Id]
-	if !ok {
-		html = string(blackfriday.Run(body))
-		if md.Id > 0 {
-			Cache[md.Id] = html
-		}
-	}
-	return parseHtml(md.Title, html)
+	return ""
+}
 
+func (md MarkdownStorage) ReadHtmlFromFile() string {
+	var body []byte
+	var err error
+	body, err = ioutil.ReadFile(md.FilePath())
+	if err != nil {
+		return ""
+	}
+	html := string(blackfriday.Run(body))
+	return parseHtml(md.Title, html)
 }
 
 type MarkdownStorageMap map[int]MarkdownStorage
@@ -86,26 +94,21 @@ func (mds MarkdownStorageMap) Init() error {
 	}
 	for _, file := range files {
 		filename := file.Name()
-		isDir := file.IsDir()
-		if !isDir && strings.HasSuffix(filename, ".md") {
-			id, title, err := ParseMarkdownName(filename)
-			if err == nil {
-				md := MarkdownStorage{
-					Id:       id,
-					Title:    title,
-					Markdown: nil,
-				}
-				mds[id] = md
-			}
+		id, title, ext, err := ParseMarkdownName(filename)
+		if err != nil {
+			return err
 		}
+		md := MarkdownStorage{
+			Id:    id,
+			Title: title,
+			Ext:   ext,
+		}
+		mds[id] = md
 	}
 	return nil
 }
 
-func (mds MarkdownStorageMap) Append(md MarkdownStorage) error {
-	if md.Markdown == nil {
-		return fmt.Errorf("The markdown is empty!")
-	}
+func (mds MarkdownStorageMap) Append(md MarkdownStorage) int {
 	maxId := 0
 	for id, _ := range mds {
 		if id > maxId {
@@ -113,31 +116,29 @@ func (mds MarkdownStorageMap) Append(md MarkdownStorage) error {
 		}
 	}
 	maxId++
-	md.Id = maxId
-	md.SaveMarkDown()
 	mds[maxId] = md
-	return nil
+	return maxId
 }
 
-func (mds MarkdownStorageMap) Delete(id int) {
-	mds[id].Delete()
-	delete(mds, id)
-}
+// func (mds MarkdownStorageMap) Delete(id int) {
+// 	mds[id].Delete()
+// 	delete(mds, id)
+// }
 
-func (mds MarkdownStorageMap) Update(id int, md MarkdownStorage) error {
-	if md.Markdown == nil {
-		return fmt.Errorf("The markdown is empty!")
-	}
-	_, ok := mds[id]
-	if !ok {
-		return fmt.Errorf("The markdown id doesn't exists!")
-	}
-	mds.Delete(id)
-	md.SaveMarkDown()
-	mds[id] = md
-	delete(mds, id)
-	return nil
-}
+// func (mds MarkdownStorageMap) Update(id int, md MarkdownStorage) error {
+// 	if md.Markdown == nil {
+// 		return fmt.Errorf("The markdown is empty!")
+// 	}
+// 	_, ok := mds[id]
+// 	if !ok {
+// 		return fmt.Errorf("The markdown id doesn't exists!")
+// 	}
+// 	mds.Delete(id)
+// 	md.SaveMarkDown()
+// 	mds[id] = md
+// 	delete(mds, id)
+// 	return nil
+// }
 
 func (mds MarkdownStorageMap) SortList() []MarkdownStorage {
 	var allId []int
@@ -164,7 +165,7 @@ func (mds MarkdownStorageMap) IndexMarkdown() string {
 }
 
 func (mds MarkdownStorageMap) IndexHtml() string {
-	b := []byte(mds.IndexMarkdown())
-	md := MarkdownStorage{Id: -1, Title: "Index", Markdown: b}
-	return md.ReadHtml()
+	body := []byte(mds.IndexMarkdown())
+	html := string(blackfriday.Run(body))
+	return parseHtml("FCY", html)
 }
